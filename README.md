@@ -2,14 +2,34 @@
 
 Three plugins for [Claude Code](https://claude.com/claude-code). Built for daily use first, generalised for release second.
 
+## Install
+
+**From your terminal:**
+
 ```bash
-/plugin marketplace add mohanraj005-dot/claude-skills
+claude plugin marketplace add mohanraj005-dot/claude-skills
+claude plugin install prompt-forge@claude-skills
 ```
 
-Then install whichever you want — they are independent:
+**Or from inside a Claude Code session** — these are slash commands, typed at the Claude prompt, not in a shell:
+
+```
+/plugin marketplace add mohanraj005-dot/claude-skills
+/plugin install prompt-forge@claude-skills
+```
+
+The three plugins are independent — swap `prompt-forge` for `context-till` or `toolkit`, or install all three. Check what you're getting before you commit to it:
 
 ```bash
-/plugin install prompt-forge@claude-skills
+claude plugin details prompt-forge@claude-skills
+```
+
+That prints the component inventory and the token cost. For `prompt-forge` it's ~380 tokens always-on, ~3.7k when the skill actually fires.
+
+To remove:
+
+```bash
+claude plugin uninstall prompt-forge@claude-skills
 ```
 
 ---
