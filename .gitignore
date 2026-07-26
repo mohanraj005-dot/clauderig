@@ -1,0 +1,7 @@
+PUBLICATION-PLAN.md
+LAUNCH-KIT.md
+.DS_Store
+__pycache__/
+*.pyc
+.env
+*.local.json

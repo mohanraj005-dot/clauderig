@@ -1,0 +1,26 @@
+{
+  "skill_name": "sketcher",
+  "evals": [
+    {
+      "id": 0,
+      "name": "cafe-30-cover",
+      "prompt": "I've taken a ground-floor unit that's about 12 metres by 8 metres, single open shell with the entrance on one of the 12m sides facing the street. I want to run a 30-cover cafe in it with a small open kitchen and a customer toilet. Can you lay it out for me, tell me whether 30 covers actually fits, and flag anything that would fail an inspection? I'm in Bengaluru.",
+      "expected_output": "A JSON floor plan (meters, schema-compliant) + a rendered to-scale 2D SVG showing walls, a ~30-seat dining zone, an open kitchen, and a toilet, with the entrance on a 12m wall. Plus a clearance/egress sanity check (NBC 2016 assembly occupancy) and an honest fits/doesn't-fit verdict with the disclaimer.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "gym-mezzanine",
+      "prompt": "My mezzanine floor is 9m x 6m. I want to put 4 treadmills along one wall and a small free-weights area with a bench and a rack. Is that enough space to be safe and usable, and how would you arrange it? Draw it.",
+      "expected_output": "A JSON plan + 2D SVG for a 9x6m room with 4 treadmills (respecting ~0.6m side / 1.83m rear clearance) and a free-weights zone, plus a spacing sanity check against gym clearance standards (6ft between patrons) and an arrangement rationale.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "coworking-10-desk",
+      "prompt": "Can you plan a coworking room for 10 desks? The room is 10m x 7m with a single door in one corner. I want to make sure the walkways between desk rows aren't too tight and that people can actually move around.",
+      "expected_output": "A JSON plan + 2D SVG placing 10 desks in a 10x7m room, with circulation aisles checked against coworking standards (>=0.9m between rows, 75-125 sqft/desk reality check) and a note on whether 10 desks is comfortable or cramped.",
+      "files": []
+    }
+  ]
+}

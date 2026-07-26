@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "name": "Example Cafe (fictional, ~60 sq m)",
+    "units": "m",
+    "jurisdiction": "IN-NBC-2016",
+    "occupancy": "assembly",
+    "_preset_note": "GENERIC STARTER PRESET. Purely fictional 10m x 6m (~60 sq m) ground-floor shell for a small cafe with an open kitchen and a customer toilet — no real address, survey number, or business. Use this as an editable starting point: replace the wall endpoints (w1-w6) with your surveyed dimensions and move interior walls/doors/furniture to match. Everything downstream (room areas, egress check) recalculates automatically. Cafes are assembly occupancy under NBC 2016 Part 4, so the linter is strict on exit width.",
+    "_todo_before_construction": [
+      "Replace this assumed 10x6 m shell with surveyed clear dimensions",
+      "Confirm number and location of real exits for the actual occupant load",
+      "Add a real column grid if the shell has structural columns",
+      "Confirm kitchen exhaust / wet-area positions with the fit-out team"
+    ]
+  },
+  "walls": [
+    { "id": "w1", "a": [0, 0], "b": [10, 0], "height": 3.2, "thickness": 0.23, "exterior": true },
+    { "id": "w2", "a": [10, 0], "b": [10, 6], "height": 3.2, "thickness": 0.23, "exterior": true },
+    { "id": "w3", "a": [10, 6], "b": [0, 6], "height": 3.2, "thickness": 0.23, "exterior": true },
+    { "id": "w4", "a": [0, 6], "b": [0, 0], "height": 3.2, "thickness": 0.23, "exterior": true },
+    { "id": "w5", "a": [8, 4.2], "b": [10, 4.2], "height": 3.2, "thickness": 0.115, "exterior": false },
+    { "id": "w6", "a": [8, 4.2], "b": [8, 6], "height": 3.2, "thickness": 0.115, "exterior": false }
+  ],
+  "rooms": [
+    { "id": "r_dining", "name": "Dining", "use": "dining", "floor_color": "#f4ece0",
+      "polygon": [[0.12, 0.12], [7, 0.12], [7, 5.88], [0.12, 5.88]] },
+    { "id": "r_kitchen", "name": "Open Kitchen", "use": "kitchen", "floor_color": "#e8eef0",
+      "polygon": [[7, 0.12], [9.88, 0.12], [9.88, 4], [7, 4]] },
+    { "id": "r_toilet", "name": "Toilet", "use": "toilet", "floor_color": "#eef0f4",
+      "polygon": [[8.06, 4.26], [9.88, 4.26], [9.88, 5.88], [8.06, 5.88]] }
+  ],
+  "doors": [
+    { "id": "d_main", "wall": "w1", "t": 0.35, "width": 1.0, "swing": "in", "hinge": "a" },
+    { "id": "d_toilet", "wall": "w5", "t": 0.5, "width": 0.9, "swing": "in", "hinge": "a" }
+  ],
+  "windows": [
+    { "id": "win_front1", "wall": "w1", "t": 0.12, "width": 1.0, "sill": 0.6, "head": 2.2 },
+    { "id": "win_front2", "wall": "w1", "t": 0.55, "width": 1.0, "sill": 0.6, "head": 2.2 }
+  ],
+  "furniture": [
+    { "id": "t1", "type": "table_round", "pos": [1.5, 1.5], "size": [0.9, 0.9, 0.75], "rot": 0 },
+    { "id": "t2", "type": "table_round", "pos": [3.5, 1.5], "size": [0.9, 0.9, 0.75], "rot": 0 },
+    { "id": "t3", "type": "table_round", "pos": [5.5, 1.5], "size": [0.9, 0.9, 0.75], "rot": 0 },
+    { "id": "t4", "type": "table_rect", "pos": [1.8, 4.0], "size": [1.4, 0.8, 0.75], "rot": 0 },
+    { "id": "t5", "type": "table_rect", "pos": [4.5, 4.0], "size": [1.4, 0.8, 0.75], "rot": 0 },
+    { "id": "k_counter", "type": "counter", "pos": [8.5, 0.6], "size": [2.6, 0.6, 0.9], "rot": 0 },
+    { "id": "k_range", "type": "range", "pos": [9.3, 1.6], "size": [1.0, 0.6, 0.9], "rot": 0 },
+    { "id": "k_sink", "type": "sink", "pos": [9.3, 2.6], "size": [0.7, 0.5, 0.9], "rot": 0 },
+    { "id": "k_fridge", "type": "fridge", "pos": [8.0, 3.5], "size": [0.7, 0.7, 1.8], "rot": 0 },
+    { "id": "wc1", "type": "toilet", "pos": [9.0, 5.1], "size": [0.7, 1.1, 0.4], "rot": 0 }
+  ]
+}
