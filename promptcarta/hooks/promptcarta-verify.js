@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * prompt-forge-verify.js — Stop hook
+ * promptcarta-verify.js — Stop hook
  *
- * Companion enforcement for prompt-forge-gate.js (UserPromptSubmit).
+ * Companion enforcement for promptcarta-gate.js (UserPromptSubmit).
  *
  * The gate INJECTS the forge contract. Nothing verified that it was followed,
  * so the contract was advisory: a turn can open by stating a skip "would be
@@ -20,7 +20,7 @@
  *   - prompt carries #noforge / !raw / #forged, or is a slash command
  *   - the turn is trivial: no subagent dispatch, <= TRIVIAL_MUTATION_MAX mutating
  *     calls, and <= READONLY_TOOL_MAX tool calls in total
- *   - a Skill tool_use with skill matching /prompt-forge/ exists in the turn
+ *   - a Skill tool_use with skill matching /promptcarta/ exists in the turn
  *
  * Triviality is measured in MUTATIONS, not raw tool count. The gate injects
  * "single domain · read-only OR <= 2 tool calls · no research and no
@@ -49,7 +49,7 @@ const DISPATCH_TOOLS = /^(Agent|Task|Workflow)$/;
 const MUTATOR_TOOLS = /^(Edit|Write|MultiEdit|NotebookEdit)$/;
 const BYPASS = /#noforge|!raw|#forged/i;
 const SLASH_COMMAND = /^\s*\//;
-const STATE_DIR = path.join(os.tmpdir(), 'prompt-forge-verify');
+const STATE_DIR = path.join(os.tmpdir(), 'promptcarta-verify');
 
 const pass = () => {
   process.stdout.write(JSON.stringify({ continue: true, suppressOutput: true }) + '\n');
@@ -214,7 +214,7 @@ process.stdin.on('end', () => {
         if (
           b.name === 'Skill' &&
           b.input &&
-          /prompt-forge/i.test(String(b.input.skill || ''))
+          /promptcarta/i.test(String(b.input.skill || ''))
         ) {
           forged = true;
         }
@@ -250,14 +250,14 @@ process.stdin.on('end', () => {
         'Forge contract not satisfied on this turn.',
         '',
         `This turn is not trivial — ${why},`,
-        'and no `Skill(prompt-forge)` call appears in the transcript.',
+        'and no `Skill(promptcarta)` call appears in the transcript.',
         '',
         'Stating that the forge was skipped does not satisfy the contract — only',
-        "the skill invocation does. Per this plugin's standing policy, prompt-forge runs",
+        "the skill invocation does. Per this plugin's standing policy, promptcarta runs",
         'before any other skill, including superpowers:brainstorming and',
         'superpowers:using-superpowers.',
         '',
-        'Invoke prompt-forge now, show the forged prompt in its own fence, then',
+        'Invoke promptcarta now, show the forged prompt in its own fence, then',
         'continue the work you were doing. Do not restart the turn from scratch.',
         '',
         'If this turn genuinely did not warrant forging, say so in one line and stop —',

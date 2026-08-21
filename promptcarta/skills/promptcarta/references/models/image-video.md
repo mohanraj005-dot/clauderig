@@ -25,7 +25,7 @@ Image and video prompts break several assumptions the text pipeline makes:
 Push for it: subject, composition, lighting, style, aspect ratio, and what would
 count as a failed render.
 
-## What prompt-forge must do when targeting this family
+## What promptcarta must do when targeting this family
 
 1. Say plainly: *"I don't have verified facts on file for this generator."*
 2. Ask which generator **and which version** — behaviour shifts sharply between

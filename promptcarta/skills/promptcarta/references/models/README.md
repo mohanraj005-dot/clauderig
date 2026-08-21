@@ -15,7 +15,7 @@ confidence: AUTHORITATIVE | STALE | UNVERIFIED
 source: <how it was verified — a named tool, skill, or doc URL>
 ```
 
-`prompt-forge` reads these before writing a prompt and **quotes the date in its
+`promptcarta` reads these before writing a prompt and **quotes the date in its
 output**. A file with no `last_verified` is treated as `UNVERIFIED`.
 
 ## Why this exists
@@ -31,7 +31,7 @@ prompt quietly underperforms.
 
 ## Status meanings
 
-| Status | Means | prompt-forge behaviour |
+| Status | Means | promptcarta behaviour |
 |---|---|---|
 | `AUTHORITATIVE` | Verified from a first-party source on `last_verified` | Use freely; quote the date |
 | `STALE` | Was authoritative; date is old enough to distrust | Use, but flag the date and offer a refresh |

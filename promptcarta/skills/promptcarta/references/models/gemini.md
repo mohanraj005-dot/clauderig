@@ -10,7 +10,7 @@ source: none — no first-party source reachable at file creation (2026-07-26)
 **Do not state facts from this file as verified.** No model data, because none
 could be verified from a first-party source when it was created.
 
-## What prompt-forge must do when targeting this family
+## What promptcarta must do when targeting this family
 
 1. Say plainly: *"I don't have verified Gemini 3 facts on file — model-specific
    claims here are unverified."*

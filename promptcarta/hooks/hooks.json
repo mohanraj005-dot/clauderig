@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-forge-gate.js\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/promptcarta-gate.js\""
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-forge-verify.js\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/promptcarta-verify.js\"",
             "timeout": 10
           }
         ]

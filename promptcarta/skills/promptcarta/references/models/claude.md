@@ -5,7 +5,7 @@ confidence: AUTHORITATIVE
 source: bundled `claude-api` skill (Anthropic-maintained), read in full 2026-07-26
 ---
 
-# Claude — prompt-forge model facts
+# Claude — promptcarta model facts
 
 **Refresh by invoking the `claude-api` skill and re-reading its Current Models,
 Thinking & Effort, and model-migration sections.** Do not refresh this file from

@@ -1,0 +1,7 @@
+{
+  "name": "entity-naming",
+  "description": "Company and brand name generation with live RDAP domain clearance and India registry/trademark lookups, scored against a fixed rubric.",
+  "version": "0.1.0",
+  "author": {"name": "Mohan"},
+  "license": "Apache-2.0"
+}

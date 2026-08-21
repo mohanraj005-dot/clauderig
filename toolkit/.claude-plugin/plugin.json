@@ -1,7 +1,0 @@
-{
-  "name": "toolkit",
-  "description": "Four standalone skills: entity-naming (name generation with live domain and registry clearance), sketcher (to-scale 2D floor plans with accessibility and egress checks), risk-critic (adversarial review that only finds problems), and remediation-planner (its paired counterpart that only proposes fixes).",
-  "version": "0.1.0",
-  "author": {"name": "Mohan"},
-  "license": "Apache-2.0"
-}

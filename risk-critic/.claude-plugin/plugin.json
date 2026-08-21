@@ -1,0 +1,7 @@
+{
+  "name": "risk-critic",
+  "description": "Adversarial review pair: risk-critic surfaces risks in work just produced and is not permitted to propose fixes; remediation-planner answers each with a quick fix, a structural fix, a trade-off and a verification command, and is not permitted to raise new risks.",
+  "version": "0.1.0",
+  "author": {"name": "Mohan"},
+  "license": "Apache-2.0"
+}

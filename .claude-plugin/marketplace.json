@@ -5,20 +5,21 @@
     "url": "https://github.com/mohanraj005-dot"
   },
   "metadata": {
-    "description": "A small set of Claude Code skills built for daily use, then generalised for release.",
-    "version": "0.2.0"
+    "description": "Claude Code plugins built for daily use, then generalised for release: a model-aware prompt generator, a token and context waste auditor, and three standalone tools.",
+    "version": "0.3.0"
   },
   "plugins": [
     {
-      "name": "prompt-forge",
-      "source": "./prompt-forge",
-      "description": "Model-aware prompt generator and critic. Reads target-model behaviour from dated reference files instead of memory, applies a model-specific transform, and scans for constructs that now return HTTP 400.",
-      "version": "0.2.0",
+      "name": "promptcarta",
+      "source": "./promptcarta",
+      "description": "Model-aware prompt generator and critic. Resolves the exact target model, reads its behaviour from dated reference files rather than memory, applies a model-specific transform, scans for constructs that now return HTTP 400, and re-scores the result.",
+      "version": "0.3.0",
       "license": "Apache-2.0",
       "keywords": [
         "prompt-engineering",
         "prompts",
         "model-selection",
+        "cost",
         "hooks"
       ]
     },
@@ -37,16 +38,42 @@
       ]
     },
     {
-      "name": "toolkit",
-      "source": "./toolkit",
-      "description": "Four standalone skills: entity-naming, sketcher, risk-critic and remediation-planner.",
+      "name": "entity-naming",
+      "source": "./entity-naming",
+      "description": "Company and brand name generation with live RDAP domain clearance and India registry/trademark lookups, scored against a fixed rubric.",
       "version": "0.1.0",
       "license": "Apache-2.0",
       "keywords": [
         "naming",
+        "branding",
+        "domains",
+        "trademark"
+      ]
+    },
+    {
+      "name": "sketcher",
+      "source": "./sketcher",
+      "description": "Turn room dimensions into a to-scale 2D SVG floor plan with accessibility and egress clearance checks (ADA/IBC or India NBC 2016).",
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "keywords": [
         "floor-plans",
+        "svg",
+        "accessibility",
+        "architecture"
+      ]
+    },
+    {
+      "name": "risk-critic",
+      "source": "./risk-critic",
+      "description": "Adversarial review pair: risk-critic surfaces risks in work just produced and is not permitted to propose fixes; remediation-planner answers each with a quick fix, a structural fix, a trade-off and a verification command, and is not permitted to raise new risks.",
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "keywords": [
         "code-review",
-        "critique"
+        "critique",
+        "risk",
+        "devils-advocate"
       ]
     }
   ]

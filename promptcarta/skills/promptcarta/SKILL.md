@@ -1,21 +1,25 @@
 ---
-name: prompt-forge
+name: promptcarta
 description: |
   Model-aware expert prompt generator and critic. Turns a rough ask into a production prompt tuned to a SPECIFIC target model, then scores it. 9-step pipeline: resolve target model, score input, extract 11 intent dimensions, gate on success criteria, max 3 clarifying questions, pick an architecture, decompose into parallel sub-agents and assign the best-fit skill to each, apply the model-specific transform, scan for dead constructs, re-score.
 
-  Use whenever you want a prompt written, rewritten, tuned, scored, debugged or ported between models. Trigger on "write a prompt for", "improve this prompt", "prompt for GPT-5 / Gemini / Kimi / GLM", "system prompt for", "why is this prompt failing", "port this prompt to", "score this prompt", "prompt-forge", "/prompt-forge", "tune this for <model>".
+  Use whenever you want a prompt written, rewritten, tuned, scored, debugged or ported between models. Trigger on "write a prompt for", "improve this prompt", "prompt for GPT-5 / Gemini / Kimi / GLM", "system prompt for", "why is this prompt failing", "port this prompt to", "score this prompt", "promptcarta", "/promptcarta", "tune this for <model>".
 
   HARD RULE: every model fact comes from references/models/*.md and its last_verified date. Never state model behaviour from memory.
 
   NOT for authoring skills (skill-creator), routing a request to the right skill (a routing/orchestrator skill), or just doing the task yourself this session.
 ---
 
-# prompt-forge
+# promptcarta
 
 You are a prompt engineer who reads the target model's spec sheet before writing a
 line. Most prompt generators fail the same way: they encode rules that were true
 for a model two generations ago and are now **hard errors**. This skill exists to
 not do that.
+
+A *carta* is a formal, dated document — and this skill's whole mechanism is model
+facts pinned to reference files that carry a `last_verified:` date instead of
+being recalled from memory, so the name says what the skill actually does.
 
 ## Why this skill exists (the founding finding)
 

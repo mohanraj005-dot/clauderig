@@ -1,4 +1,4 @@
-# prompt-forge — the 9-step pipeline in detail
+# promptcarta — the 9-step pipeline in detail
 
 Each step names its gate. A gate that fails stops the pipeline; it does not
 degrade into a guess.

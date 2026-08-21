@@ -25,7 +25,7 @@ The same weights behave differently depending on:
 So step 1 must resolve **model + serving stack + quantisation**, not just a name.
 If the user names only the model, ask — this is a legitimate use of a step 5 question.
 
-## What prompt-forge must do when targeting this family
+## What promptcarta must do when targeting this family
 
 1. Say plainly: *"I don't have verified facts on file for this family."*
 2. Ask for the serving stack and quantisation if not stated.

@@ -1,4 +1,4 @@
-# prompt-forge — architecture patterns
+# promptcarta — architecture patterns
 
 Six patterns. Name the one you used in output block 3. Examples below are
 skeletons, not templates to paste verbatim.
