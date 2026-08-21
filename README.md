@@ -44,7 +44,7 @@ Most prompt tools encode model behaviour in their own logic, which means the too
 
 That mechanism is where the name comes from: a *carta* is a formal, dated document.
 
-It runs an 11-step pipeline: resolve the exact target model → score the input → extract intent → **stop** if there is no falsifiable success criterion → clarify (max 3 questions) → pick a named architecture → decompose the ask into parallel sub-agents → apply the model-specific transform → scan for dead constructs → apply a cost lens → re-score.
+It runs a 9-step pipeline, plus two sub-steps: resolve the exact target model → score the input → extract intent → **stop** if there is no falsifiable success criterion → clarify (max 3 questions) → pick a named architecture → *(6.5)* decompose the ask into parallel sub-agents → apply the model-specific transform → scan for dead constructs → *(8.5)* apply a cost lens → re-score.
 
 Two of those steps are worth calling out:
 
@@ -115,6 +115,8 @@ Stated plainly, because you should know before installing:
 This repo was previously `claude-skills`, and `promptcarta` was previously `prompt-forge`. Both names were shared with a number of unrelated projects, so they were changed for clarity. GitHub redirects the old repository URL — but **the plugin name itself changed**, so if you installed `prompt-forge@claude-skills`, uninstall it and install `promptcarta@clauderig`.
 
 The `toolkit` bundle was split into `entity-naming`, `sketcher` and `risk-critic`, which now install independently.
+
+Until v0.3.1 the marketplace manifest still identified itself as `claude-skills`, so it registered locally under that name even after the repo rename. If you added this marketplace before v0.3.1, run `/plugin marketplace remove claude-skills` and add it again to re-key it as `clauderig`.
 
 ## Contributing
 
