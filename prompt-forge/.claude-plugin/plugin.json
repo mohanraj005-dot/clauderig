@@ -1,7 +1,7 @@
 {
   "name": "prompt-forge",
   "description": "Model-aware prompt generator and critic. Resolves the exact target model, reads its behaviour from dated reference files rather than memory, applies a model-specific transform, scans for constructs that now return HTTP 400, and re-scores the result.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {"name": "Mohan"},
   "license": "Apache-2.0"
 }

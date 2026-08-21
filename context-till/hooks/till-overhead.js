@@ -14,7 +14,14 @@
 // It CANNOT see MCP tool schemas (they live in the API request, not on disk),
 // so #21 reports a measured FLOOR, never a total. It says so in its output.
 //
-// Fires once per session (deduped via .context-till-state.json).
+// Fires once per session (deduped via a per-session file under .context-till/).
+//
+// STATE PARTITION: state lives at ~/.claude/.context-till/<session-id>.json —
+// one file per session, never a single shared file. An earlier single-global-
+// file design let two concurrent sessions clobber each other's counters (last
+// writer wins), which is exactly the failure mode a per-session partition
+// rules out by construction. Stale files are pruned after 7 days, here, since
+// SessionStart is the only hot-path-free place any of these hooks run.
 //
 // Disable:    export TILL_CTX_DISABLE=1
 // Threshold:  export TILL_CTX_OVERHEAD_PCT=8      (default 8, ASSUMED)
@@ -27,8 +34,24 @@ const os   = require('os');
 
 const HOME       = process.env.HOME || process.env.USERPROFILE || os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
-const STATE_FILE = path.join(CLAUDE_DIR, '.context-till-state.json');
+const CTX_DIR    = path.join(CLAUDE_DIR, '.context-till');
 const OVERHEAD_PCT = parseInt(process.env.TILL_CTX_OVERHEAD_PCT || '8', 10);
+const PRUNE_MAX_AGE_MS = 7 * 86400000;
+
+function sanitizeId(id) { return String(id || '').replace(/[^A-Za-z0-9_-]/g, '') || '_nosession'; }
+function statePath(sessionId) { return path.join(CTX_DIR, sanitizeId(sessionId) + '.json'); }
+
+// SessionStart only — never called from a hot path.
+function pruneStaleStateFiles() {
+  const now = Date.now();
+  try {
+    for (const f of fs.readdirSync(CTX_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      const p = path.join(CTX_DIR, f);
+      try { if (now - fs.statSync(p).mtimeMs > PRUNE_MAX_AGE_MS) fs.unlinkSync(p); } catch (_) {}
+    }
+  } catch (_) {}
+}
 
 // Rough chars→tokens. Deliberately crude and always rendered with "~".
 // Never use a precise-looking number for an estimate.
@@ -127,12 +150,13 @@ process.stdin.on('end', () => {
   try {
     let data = {};
     try { data = JSON.parse(raw) || {}; } catch (_) {}
-    const sessionId = data.session_id || '';
+    const sessionId  = data.session_id || '';
+    const STATE_FILE = statePath(sessionId);
+    pruneStaleStateFiles();
 
-    // Dedupe: report once per session. A session_id mismatch resets everything.
+    // Dedupe: report once per session. Per-session file — nothing to clobber.
     let state = {};
     try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) || {}; } catch (_) {}
-    if (state.session_id !== sessionId) state = { session_id: sessionId };
     if (state.overhead_reported) process.exit(0);
 
     const { ceiling, src } = resolveCeiling(sessionId);
@@ -194,7 +218,10 @@ process.stdin.on('end', () => {
     state.overhead_reported = true;
     state.ceiling = ceiling;
     state.ceiling_src = src;
-    try { fs.writeFileSync(STATE_FILE, JSON.stringify(state)); } catch (_) {}
+    try {
+      fs.mkdirSync(CTX_DIR, { recursive: true });
+      fs.writeFileSync(STATE_FILE, JSON.stringify(state));
+    } catch (_) {}
 
     if (!lines.length) process.exit(0);
 

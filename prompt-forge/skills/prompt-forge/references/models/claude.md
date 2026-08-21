@@ -64,6 +64,74 @@ Both are request failures, not stylistic weaknesses.
 - `max_tokens` caps thinking **plus** response text. A route that previously ran
   thinking-off and sized `max_tokens` tightly can now truncate mid-answer.
 
+## Pricing levers — caching, batch, fast mode
+
+`levers_verified: 2026-07-31` · source: bundled `claude-api` skill
+(`shared/prompt-caching.md`, `python/claude-api/batches.md`, its SKILL.md
+§Fast Mode), read in full. **Refresh by invoking the `claude-api` skill** — its
+path is version-hashed and must never be hardcoded.
+
+This section exists because the cost lens (step 8.5) needs numbers, and the
+skill's HARD RULE forbids sourcing them from memory. Before this section, no
+`references/models/*.md` file carried a cache multiplier at all.
+
+| Lever | Multiplier vs base input | Source |
+|---|---|---|
+| Cache **write**, 5-minute TTL | **1.25×** | `prompt-caching.md:141` |
+| Cache **write**, 1-hour TTL | **2×** | `prompt-caching.md:141` |
+| Cache **read** | **0.1×** | `prompt-caching.md:141,152` |
+| Batch API (all token types) | **0.5×** | `batches.md:3,10` |
+| Fast mode, Opus 5 (`speed:"fast"`) | **2×** in and out ($10/$50) | `claude-api` SKILL.md §Fast Mode |
+
+**Minimum cacheable prefix — non-monotonic, so check the model, don't interpolate:**
+
+| Tokens | Models |
+|---|---|
+| **512** | Opus 5, Fable 5, Mythos 5 |
+| **1024** | Opus 4.8, Sonnet 5, Sonnet 4.6 |
+| **2048** | Opus 4.7, Haiku 3.5 |
+| **4096** | Opus 4.6, **Haiku 4.5** |
+
+Below the minimum the cache **silently no-ops** — `cache_creation_input_tokens: 0`,
+no error (`prompt-caching.md:128`). Max **4** breakpoints (`:125`).
+
+**Break-even.** Write premium ÷ saving-per-read, where saving = 1.0 − 0.1:
+
+| TTL | Write | Reads to break even | Requests to profit |
+|---|---|---|---|
+| 5m | 1.25× | 0.25 / 0.9 = **0.28 → 1** | **2** |
+| 1h | 2.00× | 1.00 / 0.9 = **1.11 → 2** | **3** |
+
+Asymptote: **0.1× base input on the cached span — a 90% discount.**
+
+**The gate everyone forgets:** requests must arrive *within* the TTL of each other.
+`requests_per_window = daily_volume × (TTL_minutes / 1440)`. Evenly-spread traffic
+under **288/day cannot sustain a 5-minute cache** — every request becomes a cold
+write at 1.25×, so caching makes it *worse*. Ask for burst shape, not just volume.
+
+**Does the TTL refresh on read?** **UNVERIFIED.** `prompt-caching.md:216` implies it
+("requests more often than every 5 minutes keep the cache warm") but never asserts
+it. Do not encode as fact.
+
+**Invalidators** (render order is `tools` → `system` → `messages`; a change at
+position N kills every breakpoint at ≥ N): any byte change in the prefix; tool
+add/remove/**reorder**; **model switch** (caches are model-scoped, no escape hatch);
+`datetime.now()`/`uuid4()` in the prefix; `json.dumps()` without `sort_keys=True`;
+session/user id in the system prompt; conditional system sections. Does **not**
+invalidate: `tool_choice`, images, thinking on/off, `speed`, message content.
+
+Two structural rules the lens can check mechanically: the breakpoint goes on the
+**last block of the shared portion**, not the end of the prompt (`:56-58`); and a
+breakpoint walks back at most **20 content blocks**, so long agentic turns need an
+intermediate breakpoint every ~15 (`:191-193`).
+
+**Subagent cost: UNVERIFIED.** No documented per-subagent overhead figure exists in
+`claude-api` or here. Grepping for `7x`, `Agent Teams`, `per subagent` returns zero
+hits. The lens may recommend a **cap**; it must never print a subagent dollar figure.
+What *is* documented: a subagent on a cheaper model preserves the main loop's cache
+(`agent-design.md:94`), run subagents at `low` effort, and Opus 5 over-delegates
+(see the behavioural table below).
+
 ## Effort (`output_config.effort`, not top-level)
 
 Levels: `low` · `medium` · `high` · `xhigh` · `max`. Default `high`.

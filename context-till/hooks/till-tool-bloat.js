@@ -38,8 +38,22 @@ const path = require('path');
 const os   = require('os');
 
 const HOME        = process.env.HOME || process.env.USERPROFILE || os.homedir();
-const STATE_FILE  = path.join(HOME, '.claude', '.context-till-state.json');
+const CTX_DIR     = path.join(HOME, '.claude', '.context-till');
 const BLOAT_CHARS = parseInt(process.env.TILL_CTX_BLOAT_CHARS || '20000', 10);
+
+// Per-session state file — ~/.claude/.context-till/<session-id>.json — never a
+// single shared file two concurrent sessions could clobber (last writer wins
+// on a global file; a per-session partition rules that out by construction).
+function sanitizeId(id) { return String(id || '').replace(/[^A-Za-z0-9_-]/g, '') || '_nosession'; }
+function statePath(sessionId) { return path.join(CTX_DIR, sanitizeId(sessionId) + '.json'); }
+
+// Hot path: this hook runs on every matched tool call. Only mkdir once.
+let _mkdirDone = false;
+function ensureCtxDir() {
+  if (_mkdirDone) return;
+  try { fs.mkdirSync(CTX_DIR, { recursive: true }); } catch (_) {}
+  _mkdirDone = true;
+}
 
 // Raw tool → the context-mode tool that would have kept the bytes in the
 // sandbox. Only tools with a real alternative can trigger #18.
@@ -81,10 +95,10 @@ process.stdin.on('end', () => {
     const tool = data.tool_name || '';
     if (!tool) process.exit(0);
 
-    const sessionId = data.session_id || '';
+    const sessionId  = data.session_id || '';
+    const STATE_FILE = statePath(sessionId);
     let state = {};
     try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) || {}; } catch (_) {}
-    if (state.session_id !== sessionId) state = { session_id: sessionId };
 
     const target = data.tool_input?.file_path || data.tool_input?.path || '';
 
@@ -93,12 +107,14 @@ process.stdin.on('end', () => {
       if (wasRecentlyRead(state, target)) {
         state.read_justified = (state.read_justified || []).concat(target).slice(-12);
       }
+      ensureCtxDir();
       try { fs.writeFileSync(STATE_FILE, JSON.stringify(state)); } catch (_) {}
       process.exit(0);
     }
 
     const size = responseSize(data.tool_response);
     if (tool === 'Read') noteRead(state, target);
+    ensureCtxDir();
     try { fs.writeFileSync(STATE_FILE, JSON.stringify(state)); } catch (_) {}
 
     if (size < BLOAT_CHARS) process.exit(0);

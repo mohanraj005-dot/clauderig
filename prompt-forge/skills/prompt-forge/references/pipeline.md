@@ -40,7 +40,7 @@ Total < 20/50 → step 5 is **mandatory**, not optional.
 
 ---
 
-## Step 3 — Extract the 9 intent dimensions
+## Step 3 — Extract the 11 intent dimensions
 
 Fill the table from SKILL.md. Mark genuine gaps `?` rather than defaulting
 silently — a silent default is a decision the user didn't make.
@@ -101,6 +101,27 @@ Combining two is fine. Combining four means the task should be split.
 
 ---
 
+## Step 6.5 — Decompose and delegate
+
+Full spec: [decomposition.md](decomposition.md).
+
+1. Split the ask into workstreams.
+2. Run the independence test on each pair — no shared mutable state, no output
+   dependency, no ordering requirement, separately verifiable.
+3. ≥2 independent → one agent per workstream, dispatched in a **single** message.
+   Exactly 1 → single-thread, and **state the reason**.
+4. Ground the skill inventory from disk (`ls -1 ~/.claude/skills/` plus the
+   deduped plugin `find`) — the session listing is budget-capped and lossy.
+5. Name the best-fit installed skill per workstream. Verify each name exists
+   against that grounded list. Nothing owns it → `no skill — direct execution`.
+6. Emit the `[execution shape]` block.
+
+The step-6 note above ("combining four means the task should be split") is the
+same signal read from the architecture side. When it fires, it is a decomposition
+finding, not a prompt-length problem.
+
+---
+
 ## Step 7 — Apply the model-specific transform
 
 Write the prompt using **only** constructs the model file permits.
@@ -140,6 +161,19 @@ existing; do not skip it because the prompt "looks fine".
 Also scan for: instructions with no observable effect, prohibitions that describe
 the target vividly enough to suggest it, and rules that apply to one example but
 were meant to generalise (literal-following models will not generalise them).
+
+---
+
+## Step 8.5 — The cost lens
+
+Full spec: [cost-lens.md](cost-lens.md).
+
+Runs after the dead-construct scan and before the re-score — it needs the
+finished prompt text, and its verdict is evidence for step 9's Efficiency axis.
+Rules on tier vs task difficulty, effort level and whether `max_tokens` is legal
+for it, cache-prefix stability against the model's minimum, and fan-out shape.
+No volume, prefix size, or target model → emit `VOLUME: unstated` and skip the
+cache verdict; a guessed volume is a confidently wrong recommendation.
 
 ---
 

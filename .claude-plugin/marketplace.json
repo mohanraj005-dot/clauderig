@@ -6,24 +6,35 @@
   },
   "metadata": {
     "description": "A small set of Claude Code skills built for daily use, then generalised for release.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "prompt-forge",
       "source": "./prompt-forge",
       "description": "Model-aware prompt generator and critic. Reads target-model behaviour from dated reference files instead of memory, applies a model-specific transform, and scans for constructs that now return HTTP 400.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "Apache-2.0",
-      "keywords": ["prompt-engineering", "prompts", "model-selection", "hooks"]
+      "keywords": [
+        "prompt-engineering",
+        "prompts",
+        "model-selection",
+        "hooks"
+      ]
     },
     {
       "name": "context-till",
       "source": "./context-till",
       "description": "Surfaces token and context waste at the end of each turn. Reports only what its hooks actually measured, never an estimate.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "Apache-2.0",
-      "keywords": ["tokens", "cost", "context", "observability", "hooks"]
+      "keywords": [
+        "tokens",
+        "cost",
+        "context",
+        "observability",
+        "hooks"
+      ]
     },
     {
       "name": "toolkit",
@@ -31,7 +42,12 @@
       "description": "Four standalone skills: entity-naming, sketcher, risk-critic and remediation-planner.",
       "version": "0.1.0",
       "license": "Apache-2.0",
-      "keywords": ["naming", "floor-plans", "code-review", "critique"]
+      "keywords": [
+        "naming",
+        "floor-plans",
+        "code-review",
+        "critique"
+      ]
     }
   ]
 }

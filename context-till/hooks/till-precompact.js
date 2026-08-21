@@ -32,8 +32,13 @@ const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
 
-const HOME       = process.env.HOME || process.env.USERPROFILE || os.homedir();
-const STATE_FILE = path.join(HOME, '.claude', '.context-till-state.json');
+const HOME    = process.env.HOME || process.env.USERPROFILE || os.homedir();
+const CTX_DIR = path.join(HOME, '.claude', '.context-till');
+
+// Per-session state file — see till-overhead.js for why this is a directory
+// keyed by session id rather than one shared file.
+function sanitizeId(id) { return String(id || '').replace(/[^A-Za-z0-9_-]/g, '') || '_nosession'; }
+function statePath(sessionId) { return path.join(CTX_DIR, sanitizeId(sessionId) + '.json'); }
 
 let raw = '';
 process.stdin.setEncoding('utf8');
@@ -42,11 +47,11 @@ process.stdin.on('end', () => {
   try {
     let data = {};
     try { data = JSON.parse(raw) || {}; } catch (_) {}
-    const sessionId = data.session_id || '';
+    const sessionId  = data.session_id || '';
+    const STATE_FILE = statePath(sessionId);
 
     let state = {};
     try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) || {}; } catch (_) {}
-    if (state.session_id !== sessionId) state = { session_id: sessionId };
 
     state.compactions = (typeof state.compactions === 'number' ? state.compactions : 0) + 1;
     state.last_compact_trigger = data.trigger === 'manual' ? 'manual' : 'auto';
@@ -57,7 +62,10 @@ process.stdin.on('end', () => {
     delete state.used_prev;
     delete state.ema_delta;
 
-    try { fs.writeFileSync(STATE_FILE, JSON.stringify(state)); } catch (_) {}
+    try {
+      fs.mkdirSync(CTX_DIR, { recursive: true });
+      fs.writeFileSync(STATE_FILE, JSON.stringify(state));
+    } catch (_) {}
   } catch (_) { /* fail open */ }
 
   // Silent by construction. Nothing is written to stdout, so this hook cannot

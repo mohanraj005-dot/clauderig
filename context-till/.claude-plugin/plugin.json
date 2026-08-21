@@ -1,7 +1,7 @@
 {
   "name": "context-till",
   "description": "Surfaces token and context waste at the end of each turn. Hooks measure session overhead, oversized tool results, and pre-compaction pressure, then report only what was actually observed rather than estimated.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {"name": "Mohan"},
   "license": "Apache-2.0"
 }

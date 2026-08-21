@@ -27,7 +27,7 @@ Signals **#2, #5, #13, #15, #16, #19**, and the **context arm of #14**, are comp
 
 - `till-precompact.js` still increments a compaction counter in the shared state file on every `PreCompact` event — that bookkeeping is self-contained and harmless. But nothing in this package turns that counter into a spoken `#19` line; a `UserPromptSubmit` hook needs to read it and decide to speak.
 - `till-handoff-gate.js`'s context arm reads `used_prev` / `ceiling` / `ema_delta` from the shared state file. Only `ceiling` is populated by a shipped hook (`till-overhead.js`); `used_prev` and `ema_delta` are never written without an external per-turn hook. Absent that data, `contextArm()` returns `null` and only the time arm of #14 can fire. This is by design — the hook fails open, it does not crash or guess.
-- If you want #2/#5/#13/#15/#16/#19 to actually speak, you need to add your own `UserPromptSubmit` hook that reads/writes the same `~/.claude/.context-till-state.json` keys (`used_prev`, `ceiling`, `ema_delta`, `compactions`) that the shipped hooks already read and write. Until then, treat those six rows in the tables below as **documented but dormant**.
+- If you want #2/#5/#13/#15/#16/#19 to actually speak, you need to add your own `UserPromptSubmit` hook that reads/writes the same per-session state keys (`used_prev`, `ceiling`, `ema_delta`, `compactions`) that the shipped hooks already read and write — see "Shared state" below for the file layout. Until then, treat those six rows in the tables below as **documented but dormant**.
 
 ## The measurement rule
 
@@ -52,7 +52,7 @@ Hook-measured unless marked otherwise. ASSUMED thresholds have no published sour
 | 9 | [BEST-EFFORT] | Excessive subagent fan-out in THIS turn | >12 (platform default cap is 20) | "Fan-out of \<N\>. Consider sequencing." |
 | 10 | [BEST-EFFORT] | Opus subagent where Sonnet/Haiku would suffice | — | "Opus on subagent for \<task\>. Sonnet would do — ~60% saved." |
 
-Subagent delegation is a context *reduction* technique — a subagent explores tens of thousands of tokens and returns a 1–2k summary in an isolated window. A low fan-out threshold penalises the single most effective context move available, and it would contradict the documented platform default of 20 concurrent.
+Subagent delegation is a context *reduction* technique — a subagent explores tens of thousands of tokens and returns a 1–2k summary in an isolated window. A low fan-out threshold penalises the single most effective context move available, and it would contradict the documented platform default of 20 concurrent. (A "~7x cost per subagent" figure circulates in some corners — it belongs to an experimental multi-agent-teams feature, not to Task-tool subagents, and should not be cited against #9.)
 
 ### Context till
 
@@ -91,13 +91,31 @@ When a context signal fires, this is what to actually do — cheapest rung first
 
 Rung 3 deserves emphasis: fan-out is the cheapest context move, not an extravagance. Prefer it over reading widely in the main thread.
 
+### `/clear` does not kill background work — quitting the app does
+
+Verified against the Claude Code 2.1.219/2.1.220 binaries (`clearConversation`), not inferred. Tasks with `isBackgrounded: true` are copied into the new conversation and their completion notifications are re-armed; only foreground tasks are aborted, and those block the turn so `/clear` cannot reach them anyway. Behaviour changed in **2.1.72**. **Never warn that `/clear` orphans agents.**
+
+The real hazard is one step later, and it is silent:
+
+> handoff → `/clear` (safe) → **quit the app** → the session PID dies and takes its children with it. Next launch: *"background agent(s) orphaned by previous process exit."* The snapshot said nothing, so nothing prompted a check.
+
+`till-handoff-gate.js` guards against this: before it offers a handoff it instructs a `TaskList` call, and if anything is still running it adds a third option — *"Wait for background work"* — instead of only "handoff" or "keep working". If a handoff is chosen anyway, the snapshot is told to record each running task's id, purpose, output path, and agent id under a **Live work at handoff** heading. If your session-handoff-style skill doesn't already carry that heading, add it — a fresh session cannot message an agent id it was never told.
+
+Recovery paths if it happens anyway:
+
+| Artifact | Path |
+|---|---|
+| Background bash stdout | `/private/tmp/claude-<pid>/<project>/<SESSION-UUID>/tasks/<id>.output` |
+| Background agent transcript | `~/.claude/projects/<project>/<SESSION-UUID>/subagents/agent-<id>.jsonl` |
+| Pre-clear conversation | `/resume`, or `/rewind` (gained pre-`/clear` recovery in 2.1.191) |
+
 ## Manual commands (don't auto-fire)
 
 Explicit user commands. Context Till does NOT run these at end-of-turn — they cost tokens or processes that defeat the purpose if always-on.
 
 ### `till context`
 
-Report the live context position from the hook state file. Read `~/.claude/.context-till-state.json`:
+Report the live context position from the hook state file. State lives at `~/.claude/.context-till/<session-id>.json` — one file per session (the session id has non-alphanumeric characters stripped for the filename). Read the file for the current session:
 
 ```
 [Context Till — context]
@@ -166,7 +184,7 @@ When the turn is clean: **emit nothing at all.** Context Till is stingy with its
 
 Not shipped: a `UserPromptSubmit` router/orchestrator hook computing #2, #5, #13, #15, #16, and the spoken form of #19. See "Package scope" above if you want to add one.
 
-Shared state: `~/.claude/.context-till-state.json`, keyed on `session_id` — a mismatch resets every field. Gitignore it in your project.
+**State: `~/.claude/.context-till/<session-id>.json` — one file per session, never a single shared file.** An earlier design used one global `.context-till-state.json` keyed on `session_id`, resetting every field on a mismatch. Two concurrent sessions writing that file is a real failure mode, not a theoretical one: last writer wins, silently wiping the other session's `compactions`, `used_prev`, and `ema_delta`. The per-session partition rules that out by construction — each session only ever touches its own file. `till-overhead.js` prunes files older than 7 days on every `SessionStart`. Gitignore the whole `.context-till/` directory in your project.
 
 **Design constraints, deliberate:**
 

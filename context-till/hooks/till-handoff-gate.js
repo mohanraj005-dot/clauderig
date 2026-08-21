@@ -13,12 +13,17 @@
 // time arm below simply never fires — see the graceful-degradation note at
 // isNaN(startTs) — it does not error or crash.
 //
-// The context arm (below) similarly reads .context-till-state.json fields
-// (used_prev, ceiling, ema_delta) that, on this plugin alone, are only ever
-// populated by till-overhead.js (ceiling) and cleared by till-precompact.js.
-// A fuller router hook could populate used_prev/ema_delta every turn for a
-// richer signal; without one, contextArm() simply has less to work with and
-// returns null — again, absent state means "skip this arm", never a crash.
+// The context arm (below) similarly reads per-session state fields (used_prev,
+// ceiling, ema_delta) that, on this plugin alone, are only ever populated by
+// till-overhead.js (ceiling) and cleared by till-precompact.js. A fuller router
+// hook could populate used_prev/ema_delta every turn for a richer signal;
+// without one, contextArm() simply has less to work with and returns null —
+// again, absent state means "skip this arm", never a crash.
+//
+// STATE PARTITION: ~/.claude/.context-till/<session-id>.json — one file per
+// session, not a single shared file. Two concurrent sessions writing the same
+// global file is a real, observed failure mode (last writer wins, silently
+// wiping the other session's counters); a per-session partition rules it out.
 //
 // Disable:   export TILL_HANDOFF_DISABLE=1
 // Threshold: export TILL_HANDOFF_THRESHOLD_SEC=300   (default 180)
@@ -32,8 +37,11 @@ const os   = require('os');
 const HOME       = process.env.HOME || process.env.USERPROFILE || os.homedir();
 const TS_FILE    = path.join(HOME, '.claude', '.last_turn_ts');              // turn START (optional; written by an external router hook if present)
 const MARK_FILE  = path.join(HOME, '.claude', '.context-till-handoff-fired'); // dedupe: turn-start ts already offered
-const STATE_FILE = path.join(HOME, '.claude', '.context-till-state.json');    // shared with till-overhead.js / till-tool-bloat.js / till-precompact.js
+const CTX_DIR    = path.join(HOME, '.claude', '.context-till');               // per-session state dir — shared with till-overhead.js / till-tool-bloat.js / till-precompact.js
 const THRESHOLD  = parseInt(process.env.TILL_HANDOFF_THRESHOLD_SEC || '180', 10);
+
+function sanitizeId(id) { return String(id || '').replace(/[^A-Za-z0-9_-]/g, '') || '_nosession'; }
+function statePath(sessionId) { return path.join(CTX_DIR, sanitizeId(sessionId) + '.json'); }
 
 // Second arm: context budget nearly spent. Fires when the burn rate leaves
 // fewer than this many turns before auto-compact. Deliberately tighter than
@@ -46,10 +54,10 @@ const TURNS_BLOCK = parseInt(process.env.TILL_CTX_TURNS_BLOCK || '3', 10);
 // else null. Reads only shared state — no transcript parsing, no second
 // opinion on the numbers. If used_prev/ema_delta were never populated (no
 // external hook wrote them this session), this simply returns null.
-function contextArm() {
+function contextArm(sessionId) {
   if (process.env.TILL_CTX_DISABLE === '1') return null;
   try {
-    const s = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) || {};
+    const s = JSON.parse(fs.readFileSync(statePath(sessionId), 'utf8')) || {};
     const used = s.used_prev, ceiling = s.ceiling, ema = s.ema_delta;
     if (typeof used !== 'number' || typeof ceiling !== 'number' || ceiling <= 0) return null;
 
@@ -84,9 +92,10 @@ process.stdin.on('end', () => {
   if (isNaN(startTs)) process.exit(0);
 
   // Two independent arms; either one is enough to offer a handoff.
+  const sessionId  = data.session_id || '';
   const elapsedSec = (Date.now() - startTs) / 1000;
   const timeArm   = elapsedSec >= THRESHOLD;
-  const ctxReason = contextArm();
+  const ctxReason = contextArm(sessionId);
   if (!timeArm && !ctxReason) process.exit(0);
 
   // Anti-loop guard #2: marker keyed to this turn's start — only offer once per task.
@@ -110,9 +119,25 @@ process.stdin.on('end', () => {
     ? `${ctxReason.charAt(0).toUpperCase()}${ctxReason.slice(1)}. Session handoff now, or keep working?`
     : `Task ran ~${mins}m. Session handoff now, or keep working?`;
 
+  // ── Guard rail: never offer a handoff blind to live background work ───────
+  // Verified against the Claude Code 2.1.219/2.1.220 binaries: /clear does NOT
+  // kill backgrounded tasks — they are copied into the new conversation and
+  // their completion notifications are re-armed. QUITTING THE APP is what
+  // kills them. The silent-loss path is handoff -> /clear -> quit, because a
+  // handoff snapshot has no field for in-flight work, so nothing prompts a
+  // check before the app closes.
+  const guard = [
+    `FIRST, before offering anything: call TaskList.`,
+    `If any task is "running", name each one in the question text and add a third option:`,
+    `(3) "Wait for background work" -> reply with one line naming the running tasks and their output paths, then stop.`,
+    `If a handoff IS chosen while work is running, the snapshot MUST record each task's id, purpose, output path, and agent id (needed to message it back) under a "Live work at handoff" heading.`,
+    `Do NOT warn that /clear kills background agents — it does not (verified, Claude Code >= 2.1.72). The real risk is quitting the app.`
+  ].join(' ');
+
   const reason = [
     trigger,
-    `Do NOT auto-generate a handoff. Give the user the choice instead:`,
+    guard,
+    `Then: do NOT auto-generate a handoff. Give the user the choice instead:`,
     `call the AskUserQuestion tool with ONE question — "${prompt}"`,
     `— and exactly these options:`,
     `(1) "Handoff & clear" → if a session-handoff-style skill is installed, invoke it: it writes a snapshot to ~/.claude/handoffs/<project>/LATEST.md AND prints it, then tells the user to run /clear (a new session auto-resumes from that file via the till-handoff-resume SessionStart hook — no paste needed). If no such skill is installed, summarize progress manually instead;`,
