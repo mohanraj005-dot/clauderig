@@ -1,6 +1,18 @@
 # clauderig
 
-Five plugins for [Claude Code](https://claude.com/claude-code). Built for daily use first, generalised for release second.
+A [Claude Code](https://claude.com/claude-code) plugin marketplace with five independent plugins: a model-aware prompt generator, an end-of-turn token-waste auditor, an adversarial review pair, a naming pipeline and a floor-plan tool. Built for daily use first, generalised for release second.
+
+## The five plugins
+
+| Plugin | What it does | Try it |
+|---|---|---|
+| `promptcarta` | Writes and scores prompts for a specific target model. Reads model behaviour from dated reference files, never from memory, and flags constructs that now return HTTP 400. | `/promptcarta write a prompt for Claude that classifies support tickets` |
+| `context-till` | Hooks measure session overhead, oversized tool results and compaction pressure, then print one line at end of turn. Reports only what was observed. | `till check` |
+| `risk-critic` | Two skills: `risk-critic` lists risks in work just produced (no fixes allowed); `remediation-planner` answers each with a fix, trade-off and verification command (no new risks allowed). | `poke holes in this` |
+| `entity-naming` | Brief intake, name generation, live RDAP domain checks, India MCA and trademark lookup links, scored against a fixed rubric. Public endpoints only, no API key. | `I need a name for my LLP` |
+| `sketcher` | Room dimensions to a to-scale 2D SVG floor plan, with a linter that fails on clearance and egress errors (ADA/IBC or India NBC 2016). | `lay out a 30-cover cafe in a 12 m x 8 m unit` |
+
+The commands in the last column are example prompts; skills trigger on the phrases listed in each `SKILL.md` description.
 
 ## Install
 
@@ -31,6 +43,44 @@ To remove:
 ```bash
 claude plugin uninstall promptcarta@clauderig
 ```
+
+## How it's built
+
+```
+.claude-plugin/marketplace.json     marketplace manifest: lists the five plugins
+<plugin>/.claude-plugin/plugin.json plugin manifest: name, version, description
+<plugin>/skills/<skill>/SKILL.md    skill: frontmatter trigger description + instructions
+<plugin>/hooks/hooks.json           hook wiring (promptcarta, context-till only)
+<plugin>/hooks/*.js                 hook scripts, plain Node.js, no dependencies
+scripts/validate.py                 repo validator (see Testing)
+```
+
+| Plugin | Skills | Hooks | Bundled scripts and data |
+|---|---|---|---|
+| `promptcarta` | `promptcarta` | `UserPromptSubmit` (`promptcarta-gate.js`), `Stop` (`promptcarta-verify.js`) | `references/`: pipeline, architectures, cost lens, decomposition, and one file per model family under `references/models/` |
+| `context-till` | `context-till` | `SessionStart` (`till-handoff-resume.js`, `till-overhead.js`), `PostToolUse` (`till-tool-bloat.js`), `Stop` (`till-handoff-gate.js`), `PreCompact` (`till-precompact.js`) | per-session state files under `~/.claude/.context-till/` |
+| `entity-naming` | `entity-naming` | none | `clear_names.sh` (RDAP clearance), `score_names.py`, `build_board.py`, India registry and genre references |
+| `sketcher` | `sketcher` | none | `lint_plan.py`, `render_2d.py`, a JSON plan schema, standards reference, an example cafe plan, `evals/evals.json` (three prompts with expected outputs) |
+| `risk-critic` | `risk-critic`, `remediation-planner` | none | none; `risk-critic` disallows `Write`, `Edit` and `NotebookEdit` in its frontmatter |
+
+Design choices that run through the repo:
+
+- **Dated facts, not remembered facts.** `promptcarta` refuses to state a model behaviour unless a reference file carries a `last_verified:` date and a `confidence:` field.
+- **Fail open.** Every hook exits cleanly on error; a broken hook must not block a session.
+- **Split roles on purpose.** The critic cannot fix and the planner cannot find new risks, so neither grades its own work.
+- **No agents or MCP servers.** The repo ships skills and hooks only.
+
+## Testing
+
+There is no unit-test suite. What exists is a structural validator and one lint check, both run in CI (`.github/workflows/validate.yml`):
+
+```bash
+python3 scripts/validate.py
+python3 sketcher/skills/sketcher/scripts/lint_plan.py sketcher/skills/sketcher/assets/presets/example-cafe.json
+claude plugin validate .
+```
+
+`scripts/validate.py` (standard library only) checks that every manifest parses and matches its marketplace entry, every hook command points at a file that exists and passes `node --check`, every `SKILL.md` has name and description frontmatter, every Python script compiles, and every repo path mentioned in this README exists. `claude plugin validate` is the Claude Code CLI's own manifest check and is not run in CI. Skill behaviour itself is not tested automatically; `sketcher` carries example prompts in `evals/evals.json` for manual runs.
 
 ---
 
